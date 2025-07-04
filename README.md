@@ -15,6 +15,8 @@ Build a minimal Go web server that allows a user to view a list of animals from 
 | Method | Route | Description |
 |----------|----------|----------|
 | GET |	`/animals` |	Return list of animals |
+| GET |	`/animals/:id` |	Return one animal (Bonus) |
+| PATCH |	`/animals/:id` |	Update one animal (Bonus) |
 
 - Returns a JSON array of animal objects.
 - Each object includes: `id`, `name`, and `species`.
@@ -26,6 +28,10 @@ Build a minimal Go web server that allows a user to view a list of animals from 
   { "id": 2, "name": "Ferret", "species": "Mustela putorius furo" }
 ]
 ```
+#### Bonus
+-  Simple test
+-  Good Practices / Structure
+
 
 ## Example Request
 ```bash
