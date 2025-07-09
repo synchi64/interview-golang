@@ -59,7 +59,7 @@ func TestGetById(t *testing.T) {
 }
 
 func TestPost(t *testing.T) {
-	command := exec.Command("curl", "Authorization: Bearer secret123", "http://localhost:8080/animals", "--include", "--header", "\"Content-Type: application/json\"", "--request", "\"POST\"", "--data", "'{\"id\": 3, \"name\": \"bobcat\", \"species\": \"Lynx rufus\"}'")
+	command := exec.Command("curl", "-H", "Authorization: Bearer secret123", "http://localhost:8080/animals", "--include", "--header", "\"Content-Type: application/json\"", "--request", "\"POST\"", "--data", "'{\"id\": 3, \"name\": \"bobcat\", \"species\": \"Lynx rufus\"}'")
 
 	output, err := command.Output()
 	if err != nil {
@@ -70,7 +70,18 @@ func TestPost(t *testing.T) {
 }
 
 func TestPatch(t *testing.T) {
-	command := exec.Command("curl", "-H", "Authorization: Bearer secret123", "http://localhost:8080/animals")
+	command := exec.Command("curl", "-H", "Authorization: Bearer secret123", "http://localhost:8080/animals/1", "--include", "--header", "\"Content-Type: application/json\"", "--request", "\"PATCH\"", "--data", "'{\"name\": \"bobcat\", \"species\": \"Lynx rufus\"}'")
+
+	output, err := command.Output()
+	if err != nil {
+		fmt.Println("Error:", err)
+		return
+	}
+	fmt.Println("Output:", string(output))
+}
+
+func TestDelete(t *testing.T) {
+	command := exec.Command("curl", "-H", "Authorization: Bearer secret123", "http://localhost:8080/animals/1", "--include", "--header", "\"Content-Type: application/json\"", "--request", "\"DELETE\"")
 
 	output, err := command.Output()
 	if err != nil {

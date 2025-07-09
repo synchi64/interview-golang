@@ -1,6 +1,7 @@
 package main
 
 import (
+	"fmt"
 	"net/http"
 	"strconv"
 
@@ -27,105 +28,120 @@ func main() {
 	router.GET("/animals/:id", getAnimalsById)
 	router.POST("/animals", postAnimals)
 	router.PATCH("/animals/:id", patchAnimal)
-	//could add a PUT and DELETE
+	router.DELETE("/animals/:id", deletAnimal)
+	//could add a PUT
 
 	router.Run("localhost:8080")
 }
 
+func checkAuth(bearerToken string) bool {
+	return bearerToken == reqToken
+}
+
 func getAnimals(c *gin.Context) {
 	bearerToken := c.Request.Header.Get("Authorization")
-	if bearerToken == reqToken {
-		c.JSON(http.StatusOK, gin.H{
-			"data": "resource data",
+	if checkAuth(bearerToken) {
+		c.IndentedJSON(http.StatusOK, animals)
+	} else {
+		c.JSON(http.StatusUnauthorized, gin.H{
+			"message": "unauthorized",
 		})
-		return
 	}
-	c.JSON(http.StatusUnauthorized, gin.H{
-		"message": "unauthorized",
-	})
-
-	c.IndentedJSON(http.StatusOK, animals)
 }
 
 func getAnimalsById(c *gin.Context) {
 	bearerToken := c.Request.Header.Get("Authorization")
-	if bearerToken == reqToken {
-		c.JSON(http.StatusOK, gin.H{
-			"data": "resource data",
-		})
-		return
-	}
-	c.JSON(http.StatusUnauthorized, gin.H{
-		"message": "unauthorized",
-	})
-	id, err := strconv.Atoi(c.Param("id"))
-	if err != nil {
-		panic(err)
-	}
-
-	for _, a := range animals {
-		if a.Id == id {
-			c.IndentedJSON(http.StatusOK, a)
+	if checkAuth(bearerToken) {
+		id, err := strconv.Atoi(c.Param("id"))
+		if err != nil {
+			c.JSON(400, gin.H{"error": "Invalid ID"})
 			return
 		}
+		for _, a := range animals {
+			if a.Id == id {
+				c.IndentedJSON(http.StatusOK, a)
+				return
+			}
+		}
+		c.IndentedJSON(http.StatusNotFound, gin.H{"message": "animal not found"})
+		return
+	} else {
+		c.JSON(http.StatusUnauthorized, gin.H{
+			"message": "unauthorized",
+		})
 	}
-	c.IndentedJSON(http.StatusNotFound, gin.H{"message": "animal not found"})
 }
 
 func postAnimals(c *gin.Context) {
 	bearerToken := c.Request.Header.Get("Authorization")
-	if bearerToken == reqToken {
-		c.JSON(http.StatusOK, gin.H{
-			"data": "resource data",
+	if checkAuth(bearerToken) {
+		var newAnimal animal
+		if err := c.BindJSON(&newAnimal); err != nil {
+			return
+		}
+		newAnimal.Id = len(animals) + 1
+		animals = append(animals, newAnimal)
+		c.IndentedJSON(http.StatusCreated, newAnimal)
+	} else {
+		c.JSON(http.StatusUnauthorized, gin.H{
+			"message": "unauthorized",
 		})
-		return
 	}
-	c.JSON(http.StatusUnauthorized, gin.H{
-		"message": "unauthorized",
-	})
-	var newAnimal animal
-
-	if err := c.BindJSON(&newAnimal); err != nil {
-		return
-	}
-
-	newAnimal.Id = len(animals) + 1
-
-	animals = append(animals, newAnimal)
-	c.IndentedJSON(http.StatusCreated, newAnimal)
 }
 
 func patchAnimal(c *gin.Context) {
 	bearerToken := c.Request.Header.Get("Authorization")
-	if bearerToken == reqToken {
-		c.JSON(http.StatusOK, gin.H{
-			"data": "resource data",
-		})
-		return
-	}
-	c.JSON(http.StatusUnauthorized, gin.H{
-		"message": "unauthorized",
-	})
-	var newAnimal animal
-	id, err := strconv.Atoi(c.Param("id"))
-	if err != nil {
-		panic(err)
-	}
-	if err := c.BindJSON(&newAnimal); err != nil {
-		return
-	}
-
-	for _, a := range animals {
-		if a.Id == id {
-			if newAnimal.Name != "" {
-				a.Name = newAnimal.Name
-			}
-			if newAnimal.Species != "" {
-				a.Species = newAnimal.Species
-			}
-			c.IndentedJSON(http.StatusCreated, a)
+	if checkAuth(bearerToken) {
+		var newAnimal animal
+		id, err := strconv.Atoi(c.Param("id"))
+		if err != nil {
+			c.JSON(400, gin.H{"error": "Invalid ID"})
 			return
 		}
+		for _, a := range animals {
+			if a.Id == id {
+				if newAnimal.Name != "" {
+					a.Name = newAnimal.Name
+				}
+				if newAnimal.Species != "" {
+					a.Species = newAnimal.Species
+				}
+				c.IndentedJSON(http.StatusCreated, a)
+				return
+			}
+		}
+		c.IndentedJSON(http.StatusNotFound, gin.H{"message": "animal not found"})
+	} else {
+		c.JSON(http.StatusUnauthorized, gin.H{
+			"message": "unauthorized",
+		})
 	}
-	c.IndentedJSON(http.StatusNotFound, gin.H{"message": "animal not found"})
+}
+
+func deletAnimal(c *gin.Context) {
+	bearerToken := c.Request.Header.Get("Authorization")
+	if checkAuth(bearerToken) {
+		id, err := strconv.Atoi(c.Param("id"))
+		if err != nil {
+			c.JSON(400, gin.H{"error": "Invalid ID"})
+			return
+		}
+		for _, a := range animals {
+			if a.Id == id {
+				animals = append(animals[:id-1], animals[id:]...)
+				count := 1
+				for _, b := range animals {
+					fmt.Print(b)
+					animals[count-1].Id = count
+					count++
+				}
+				return
+			}
+		}
+		c.IndentedJSON(http.StatusNotFound, gin.H{"message": "animal not found"})
+	} else {
+		c.JSON(http.StatusUnauthorized, gin.H{
+			"message": "unauthorized",
+		})
+	}
 }
